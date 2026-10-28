@@ -14,6 +14,7 @@
   --ok-bg:#dbeee1; --ok-line:#3d8857; --ok-fg:#1d5733;
   --near-bg:#f2e9d5; --near-fg:#694b10;
   --miss-bg:#eceef0; --miss-fg:#3c4148;
+  --err:#a8322d;
   --btn:#17191c; --btn-fg:#ffffff;
   --font:"Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
@@ -23,12 +24,14 @@
   --ok-bg:#163522; --ok-line:#5fb07c; --ok-fg:#a9dcbb;
   --near-bg:#3a2e14; --near-fg:#ebd29b;
   --miss-bg:#26292d; --miss-fg:#c9cdd2;
+  --err:#f0938e;
   --btn:#eceef0; --btn-fg:#17191c; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#121315; --surface:#1b1d20; --fg:#eceef0; --muted:#9aa0a8; --line:#2e3135; --track:#2c2f33;
   --ok-bg:#163522; --ok-line:#5fb07c; --ok-fg:#a9dcbb;
   --near-bg:#3a2e14; --near-fg:#ebd29b;
   --miss-bg:#26292d; --miss-fg:#c9cdd2;
+  --err:#f0938e;
   --btn:#eceef0; --btn-fg:#17191c; color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -45,30 +48,25 @@ p{margin:0}
 .num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 .btn{appearance:none;border:0;border-radius:10px;background:var(--btn);color:var(--btn-fg);font:600 16px/1 var(--font);padding:16px;width:100%;cursor:pointer}
 .btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--line)}
-.btn:focus-visible,.link:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
+.btn:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
 .btn:active{transform:scale(0.99)}
-.link{background:none;border:0;padding:0;color:var(--muted);font:inherit;font-size:14px;text-decoration:underline;cursor:pointer}
 
 .bar{display:flex;justify-content:space-between;font-size:14px;color:var(--muted)}
 .frame{margin:0;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center}
 .frame img{display:block;width:100%;height:auto;max-height:58vh;object-fit:contain}
 
-.pct{font-family:var(--mono);font-size:44px;line-height:1;text-align:center;font-variant-numeric:tabular-nums}
-.slider{position:relative;height:48px}
-.slider::before{content:"";position:absolute;left:0;right:0;top:50%;height:8px;margin-top:-4px;border-radius:4px;background:var(--track)}
-.band{position:absolute;top:50%;height:16px;margin-top:-8px;border-radius:4px;background:var(--ok-bg);border:1.5px solid var(--ok-line);
-  left:calc(16px + (100% - 32px) * var(--lo));width:calc((100% - 32px) * (var(--hi) - var(--lo)) + 2px);min-width:6px}
-input[type=range]{position:relative;-webkit-appearance:none;appearance:none;width:100%;height:48px;margin:0;background:transparent;cursor:grab;touch-action:pan-y}
-input[type=range]:active{cursor:grabbing}
-input[type=range]::-webkit-slider-runnable-track{height:8px;background:transparent}
-input[type=range]::-moz-range-track{height:8px;background:transparent}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:32px;height:32px;margin-top:-12px;border-radius:50%;background:var(--fg);border:4px solid var(--surface);box-shadow:0 0 0 1px var(--fg)}
-input[type=range]::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:var(--fg);border:4px solid var(--surface);box-shadow:0 0 0 1px var(--fg)}
-input[type=range]:focus-visible{outline:none}
-input[type=range]:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 1px var(--fg),0 0 0 5px var(--track)}
-input[type=range]:disabled{cursor:default;opacity:1}
-.ends{display:flex;justify-content:space-between;font-size:14px;color:var(--muted);margin-top:-6px}
 .rate{display:flex;flex-direction:column;gap:12px}
+.level-out{font-size:28px;font-weight:600;line-height:1.2;text-align:center;min-height:34px;letter-spacing:-0.01em}
+.level-out.unset{font-size:16px;font-weight:400;color:var(--muted);line-height:34px;letter-spacing:0}
+.levels{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;touch-action:pan-y;user-select:none;-webkit-user-select:none;cursor:pointer;border-radius:10px}
+.levels:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
+.lv{min-height:60px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:13px;line-height:1.2;padding:6px 4px;border-radius:8px;
+  background:var(--surface);border:1px solid var(--line);color:var(--muted);transition:background .12s,color .12s}
+.lv.on{background:var(--fg);color:var(--bg);border-color:var(--fg);font-weight:600}
+.lv.ans:not(.on){background:var(--ok-bg);color:var(--ok-fg);border-color:var(--ok-line);font-weight:600}
+.lv.ans.on{box-shadow:0 0 0 3px var(--ok-line)}
+.locked .levels{cursor:default}
+.err{color:var(--err);font-size:14px;text-align:center}
 
 .reveal{display:flex;flex-direction:column;gap:14px;padding-top:4px}
 .verdict{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
@@ -83,6 +81,7 @@ input[type=range]:disabled{cursor:default;opacity:1}
 .score-big{font-family:var(--mono);font-size:64px;line-height:1;font-variant-numeric:tabular-nums}
 .recap{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
 .recap li{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+.recap li>span:last-child{text-align:right;white-space:nowrap}
 .recap .mark{font-weight:600}
 
 .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
@@ -92,18 +91,23 @@ input[type=range]:disabled{cursor:default;opacity:1}
 .mcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;min-width:0}
 .mcard img{display:block;width:100%;aspect-ratio:4/3;object-fit:contain;background:var(--bg)}
 .mcard .body{padding:14px 16px;display:flex;flex-direction:column;gap:10px}
-.mini{position:relative;height:16px}
-.mini::before{content:"";position:absolute;left:0;right:0;top:6px;height:4px;border-radius:2px;background:var(--track)}
-.mini .b{position:absolute;top:2px;height:12px;border-radius:3px;background:var(--ok-bg);border:1.5px solid var(--ok-line)}
-.mini .m{position:absolute;top:0;width:4px;height:16px;margin-left:-2px;border-radius:2px;background:var(--fg)}
+.votes{display:flex;flex-direction:column;gap:5px;font-size:13px}
+.vr{display:grid;grid-template-columns:78px minmax(0,1fr) 24px;gap:8px;align-items:center}
+.vr .t{height:10px;background:var(--track);border-radius:3px;overflow:hidden}
+.vr .f{height:100%;background:var(--muted)}
+.vr.ans{color:var(--ok-fg);font-weight:600}
+.vr.ans .f{background:var(--ok-line)}
+.vr .c{text-align:right}
+.spark{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;align-items:end;height:24px;margin-top:6px;max-width:220px}
+.spark i{display:block;background:var(--muted);border-radius:2px 2px 0 0;min-height:2px}
+.spark i.ans{background:var(--ok-line)}
 .rows{display:flex;flex-direction:column;border-top:1px solid var(--line)}
 .row{display:grid;grid-template-columns:56px minmax(0,1fr) 120px;gap:14px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
 .row img{width:56px;height:42px;object-fit:cover;border-radius:6px;background:var(--surface)}
 .row .t{min-width:0}
 .empty{background:var(--surface);border:1px dashed var(--line);border-radius:12px;padding:28px;text-align:center;color:var(--muted)}
-.inline-confirm{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
-.inline-confirm .btn{width:auto;padding:10px 14px;font-size:14px}
 @media (prefers-reduced-motion:no-preference){.reveal:not([hidden]){animation:rise .25s ease-out}@keyframes rise{from{opacity:.4;transform:translateY(6px)}to{opacity:1;transform:none}}}
+@media (prefers-reduced-motion:reduce){.lv{transition:none}}
 @media (max-width:520px){.row{grid-template-columns:48px minmax(0,1fr) 88px}.row img{width:48px;height:36px}}
 img{max-width:100%}
 </style>
@@ -114,21 +118,20 @@ img{max-width:100%}
 <main class="app" id="intro">
   <p class="muted" style="font-size:14px">Workshop game</p>
   <h1>Spot the Slop</h1>
-  <p>You'll see <span id="introCount" class="num">13</span> graphics. Some are heavy on AI slop, some have a little, and some have none. For each one, drag the slider to say how much AI slop you see, then lock it in to find out what gives it away.</p>
+  <p>You'll see <span id="introCount" class="num">13</span> graphics. Some are heavy on AI slop, some have a little, and some have none. For each one, drag or tap along the scale from None to Total slop, then lock it in to find out why.</p>
   <button class="btn" id="startBtn">Start</button>
 </main>
 
 <!-- Play -->
 <main class="app" id="play" hidden>
-  <div class="bar"><span id="count" class="num">1 of 12</span><span id="scoreLbl" class="num">Score 0</span></div>
+  <div class="bar"><span id="count" class="num">1 of 13</span><span id="scoreLbl" class="num">Score 0</span></div>
   <figure class="frame"><img id="img" alt=""></figure>
-  <div class="rate">
-    <output class="pct" id="pct" for="slider">50%</output>
-    <div class="slider">
-      <div class="band" id="band" hidden></div>
-      <input type="range" id="slider" min="0" max="100" step="1" value="50" aria-label="How much AI slop is in this graphic">
+  <div class="rate" id="rate">
+    <output class="level-out unset" id="levelOut" aria-live="polite">Drag or tap to rate</output>
+    <div class="levels" id="levels" role="slider" tabindex="0" aria-label="How much AI slop is in this graphic" aria-valuemin="0" aria-valuemax="4">
+      <div class="lv">None</div><div class="lv">Barely any</div><div class="lv">Some</div><div class="lv">A lot</div><div class="lv">Total slop</div>
     </div>
-    <div class="ends"><span>Slop-free</span><span>Total slop</span></div>
+    <p class="err" id="err" hidden>Pick a level first.</p>
     <button class="btn" id="lockBtn">Lock it in</button>
   </div>
   <section class="reveal" id="reveal" hidden aria-live="polite">
@@ -147,7 +150,7 @@ img{max-width:100%}
 <main class="app" id="end" hidden>
   <div class="center" style="display:flex;flex-direction:column;gap:8px;padding-top:12px">
     <p class="muted">You spotted</p>
-    <p class="score-big" id="finalScore">0 of 12</p>
+    <p class="score-big" id="finalScore">0 of 13</p>
     <h1 id="tier" style="font-size:24px"></h1>
     <p class="muted" id="tierNote"></p>
     <p class="muted" id="savedNote" hidden style="font-size:14px">Your result was added to the room's results.</p>
@@ -175,52 +178,72 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx14VAzKdXoS8EOQIGES
 const sheetReady = () => /^https:\/\/script\.google\.com\//.test(SCRIPT_URL);
 
 /* ===== Your content =====
-   One entry per graphic, from "Spot the slop notes" sheet.
-   slop: your answer. range: what counts as correct (answer ±15, inclusive; 0% and 100% answers get 0–30 and 70–100); edit per graphic if you like.
+   The five levels, in order. Ratings are saved to the Sheet as their position: 0 = None … 4 = Total slop. */
+const LEVELS = ["None","Barely any","Some","A lot","Total slop"];
+
+/* One entry per graphic, from "Spot the slop notes" sheet.
+   level: the correct answer (one of LEVELS). Exactly right scores a point; one level off shows "Close".
    human: true for human-made controls. notes: the text revealed after rating. */
 const GRAPHICS = [
-  {"id": "g01", "title": "Joaquin Phoenix Quote", "src": "images-web/01.jpg", "slop": 70, "range": [55, 85], "human": false, "notes": "This art style is a current default that is quickly clocked as AI. If you ask for artwork without customizing the prompt in any way, you'll get something like this. Notice the leaves growing out of the arm, and the odd fur texture that also reads AI. The beige/yellow overtone also signals AI."},
-  {"id": "g02", "title": "Dragon Drawing Tutorial", "src": "images-web/02.webp", "slop": 100, "range": [70, 100], "human": false, "notes": "This art style is another current default that is quickly clocked as AI. Notice the typo in \"Duolingo\" and how the drawing steps don't really make sense (look at the wings). The burst lines coming out from the button are also an AI signal."},
-  {"id": "g03", "title": "Vegan Linguists Flyer", "src": "images-web/03.jpg", "slop": 50, "range": [35, 65], "human": false, "notes": "Includes some common AI signals such as eyebrow text, and card tab accent borders in the exact AI style. There are also odd spacing decisions, and a random line under the headline, which is also common."},
-  {"id": "g04", "title": "Purple Quote", "src": "images-web/04.jpg", "slop": 70, "range": [55, 85], "human": false, "notes": "This has the look of a design that AI builds in HTML: a purple gradient with a glow in the corner, one word in a lighter italic, a short rule, and a spaced-out all-caps name. The serif looks like DejaVu Serif, which is the font a headless browser falls back to when the intended font doesn’t load."},
-  {"id": "g05", "title": "Maryland Ballot Flyer", "src": "images-web/05.jpg", "slop": 80, "range": [65, 95], "human": false, "notes": "Common slop brushstrokes, crammed content with very little white space, common AI flyer layout"},
-  {"id": "g06", "title": "Meatless Monday Ad", "src": "images-web/06.jpg", "slop": 70, "range": [55, 85], "human": false, "notes": "Common brush headings in generated AI flyers, crammed content with very little white space, doodle bursts. At least the photos seem real!"},
-  {"id": "g07", "title": "AI in Publishing", "src": "images-web/07.jpg", "slop": 100, "range": [70, 100], "human": false, "notes": "Common pixar-style AI graphic, woman in glasses with messy bun, lots of labels, common \"It's not X, it's Y\" writing, AI sheen over everything"},
-  {"id": "g08", "title": "Global Health Art", "src": "images-web/08.jpg", "slop": 100, "range": [70, 100], "human": false, "notes": "Current default AI art style, chibi characters with yellow overtones and burst lines"},
-  {"id": "g09", "title": "AVA Sponsor Post", "src": "images-web/09.jpg", "slop": 0, "range": [0, 30], "human": true, "notes": "Human-made, no AI signals"},
-  {"id": "g10", "title": "Vegan Links Ad", "src": "images-web/10.jpg", "slop": 70, "range": [55, 85], "human": false, "notes": "Common slop brushstrokes, crammed content with very little white space, common AI flyer layout"},
-  {"id": "g11", "title": "Faunalytics Post", "src": "images-web/11.jpg", "slop": 40, "range": [25, 55], "human": false, "notes": "AI edited the logo by mistake (reads \"faanalytics\"), odd burst lines around the heart, random line under the headline (common tell)"},
-  {"id": "g12", "title": "10x Your Growth", "src": "images-web/12.jpg", "slop": 100, "range": [70, 100], "human": false, "notes": "Gradient headline, “✨ Launching Soon” pill, commonly AI styled frosted-glass cards, emoji icons. This is an example directly pulled from impeccable.style/slop"},
-  {"id": "g13", "title": "Calm App Ad", "src": "images-web/13.jpg", "slop": 10, "range": [0, 30], "human": false, "notes": "We know this ad is made with AI because it had an AI graphic tag that says it was generated (removed for this test). But overall, it doesn't smell like AI, unless you really analyze the scribble lines on the side."},
+  {"id": "g01", "title": "Joaquin Phoenix Quote", "src": "images-web/01.jpg", "level": "A lot", "human": false, "notes": "This art style is a current default that is quickly clocked as AI. If you ask for artwork without customizing the prompt in any way, you'll get something like this. Notice the leaves growing out of the arm, and the odd fur texture that also reads AI. The beige/yellow overtone also signals AI."},
+  {"id": "g02", "title": "Dragon Drawing Tutorial", "src": "images-web/02.webp", "level": "Total slop", "human": false, "notes": "This art style is another current default that is quickly clocked as AI. Notice the typo in \"Duolingo\" and how the drawing steps don't really make sense (look at the wings). The burst lines coming out from the button are also an AI signal."},
+  {"id": "g03", "title": "Vegan Linguists Flyer", "src": "images-web/03.jpg", "level": "Some", "human": false, "notes": "Includes some common AI signals such as eyebrow text, and card tab accent borders in the exact AI style. There are also odd spacing decisions, and a random line under the headline, which is also common."},
+  {"id": "g04", "title": "Purple Quote", "src": "images-web/04.jpg", "level": "A lot", "human": false, "notes": "This has the look of a design that AI builds in HTML: a purple gradient with a glow in the corner, one word in a lighter italic, a short rule, and a spaced-out all-caps name. The serif looks like DejaVu Serif, which is the font a headless browser falls back to when the intended font doesn’t load."},
+  {"id": "g05", "title": "Maryland Ballot Flyer", "src": "images-web/05.jpg", "level": "A lot", "human": false, "notes": "Common slop brushstrokes, crammed content with very little white space, common AI flyer layout"},
+  {"id": "g06", "title": "Meatless Monday Ad", "src": "images-web/06.jpg", "level": "A lot", "human": false, "notes": "Common brush headings in generated AI flyers, crammed content with very little white space, doodle bursts. At least the photos seem real!"},
+  {"id": "g07", "title": "AI in Publishing", "src": "images-web/07.jpg", "level": "Total slop", "human": false, "notes": "Common pixar-style AI graphic, woman in glasses with messy bun, lots of labels, common \"It's not X, it's Y\" writing, AI sheen over everything"},
+  {"id": "g08", "title": "Global Health Art", "src": "images-web/08.jpg", "level": "Total slop", "human": false, "notes": "Current default AI art style, chibi characters with yellow overtones and burst lines"},
+  {"id": "g09", "title": "AVA Sponsor Post", "src": "images-web/09.jpg", "level": "None", "human": true, "notes": "Human-made, no AI signals"},
+  {"id": "g10", "title": "Vegan Links Ad", "src": "images-web/10.jpg", "level": "A lot", "human": false, "notes": "Common slop brushstrokes, crammed content with very little white space, common AI flyer layout"},
+  {"id": "g11", "title": "Faunalytics Post", "src": "images-web/11.jpg", "level": "Some", "human": false, "notes": "AI edited the logo by mistake (reads \"faanalytics\"), odd burst lines around the heart, random line under the headline (common tell)"},
+  {"id": "g12", "title": "10x Your Growth", "src": "images-web/12.jpg", "level": "Total slop", "human": false, "notes": "Gradient headline, “✨ Launching Soon” pill, commonly AI styled frosted-glass cards, emoji icons. This is an example directly pulled from impeccable.style/slop"},
+  {"id": "g13", "title": "Calm App Ad", "src": "images-web/13.jpg", "level": "Barely any", "human": false, "notes": "We know this ad is made with AI because it had an AI graphic tag that says it was generated (removed for this test). But overall, it doesn't smell like AI, unless you really analyze the scribble lines on the side."},
 ];
 
-/* Placeholder art until the real images arrive. Replace with: GRAPHICS[i].src = "images/g01.jpg" */
+/* Gray placeholder for any entry without a src */
 function placeholder(i, label){
   const tones=[["#d9dde2","#9aa3ad","#4d5560"],["#e3ddd5","#a8998a","#5a4c40"],["#d6e0dc","#8fa69d","#3f5650"],["#e0dbe4","#a198ab","#544a5e"]];
   const [a,b,c]=tones[i%tones.length];
-  const shapes=[
-    `<circle cx="300" cy="300" r="150" fill="${b}"/><rect x="120" y="480" width="360" height="120" rx="12" fill="${c}"/>`,
-    `<rect x="90" y="120" width="420" height="300" rx="16" fill="${b}"/><circle cx="420" cy="520" r="90" fill="${c}"/>`,
-    `<path d="M80 600 L300 160 L520 600 Z" fill="${b}"/><circle cx="300" cy="420" r="60" fill="${c}"/>`,
-    `<rect x="100" y="100" width="180" height="500" rx="12" fill="${b}"/><rect x="320" y="260" width="180" height="340" rx="12" fill="${c}"/>`
-  ][i%4];
-  const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 750"><rect width="600" height="750" fill="${a}"/>${shapes}<text x="300" y="700" text-anchor="middle" font-family="system-ui,sans-serif" font-size="30" fill="${c}">Placeholder: ${label}</text></svg>`;
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 750"><rect width="600" height="750" fill="${a}"/><circle cx="300" cy="320" r="150" fill="${b}"/><text x="300" y="700" text-anchor="middle" font-family="system-ui,sans-serif" font-size="30" fill="${c}">Placeholder: ${label}</text></svg>`;
   return "data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg);
 }
-GRAPHICS.forEach((g,i)=>{ if(!g.src) g.src=placeholder(i,g.title); });
+GRAPHICS.forEach((g,i)=>{ if(!g.src) g.src=placeholder(i,g.title); g.answer=LEVELS.indexOf(g.level); });
 
 const $=id=>document.getElementById(id);
 const screens=["intro","play","end","room"];
 function show(name){ screens.forEach(s=>$(s).hidden=s!==name); window.scrollTo(0,0); }
 
-let state={order:[],i:0,answers:[],locked:false};
+let state={order:[],i:0,answers:[],locked:false,pick:null};
 
 function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
 const score=()=>state.answers.filter(a=>a.correct).length;
-const fmtRange=r=>r[0]===r[1]?`${r[0]}%`:`${r[0]}–${r[1]}%`;
+
+/* ===== Level scale: drag across it or tap a level ===== */
+const scale=$("levels"), cells=[...scale.children];
+let dragging=false;
+function setPick(i){
+  state.pick=i;
+  cells.forEach((c,k)=>c.classList.toggle("on",k===i));
+  const out=$("levelOut"); out.textContent=LEVELS[i]; out.classList.remove("unset");
+  scale.setAttribute("aria-valuenow",i); scale.setAttribute("aria-valuetext",LEVELS[i]);
+  $("err").hidden=true;
+}
+function cellAt(x){ const r=scale.getBoundingClientRect(); return Math.max(0,Math.min(LEVELS.length-1,Math.floor((x-r.left)/r.width*LEVELS.length))); }
+scale.addEventListener("pointerdown",e=>{ if(state.locked) return; dragging=true; try{scale.setPointerCapture(e.pointerId);}catch(_){} setPick(cellAt(e.clientX)); });
+scale.addEventListener("pointermove",e=>{ if(!dragging||state.locked) return; const i=cellAt(e.clientX); if(i!==state.pick) setPick(i); });
+["pointerup","pointercancel","lostpointercapture"].forEach(t=>scale.addEventListener(t,()=>{dragging=false;}));
+scale.addEventListener("keydown",e=>{
+  if(state.locked) return;
+  const cur=state.pick, last=LEVELS.length-1; let i=null;
+  if(e.key==="ArrowRight"||e.key==="ArrowUp") i=cur==null?2:Math.min(last,cur+1);
+  else if(e.key==="ArrowLeft"||e.key==="ArrowDown") i=cur==null?2:Math.max(0,cur-1);
+  else if(e.key==="Home") i=0; else if(e.key==="End") i=last;
+  else if(e.key==="Enter"&&cur!=null){ e.preventDefault(); lock(); return; }
+  if(i!=null){ e.preventDefault(); setPick(i); }
+});
 
 function start(){
-  state={order:shuffle(GRAPHICS.map(g=>g.id)),i:0,answers:[],locked:false};
+  state={order:shuffle(GRAPHICS.map(g=>g.id)),i:0,answers:[],locked:false,pick:null};
   show("play"); renderItem();
   state.order.slice(1).forEach(id=>{ const im=new Image(); im.src=GRAPHICS.find(g=>g.id===id).src; });
 }
@@ -231,36 +254,37 @@ function renderItem(){
   $("count").textContent=`${state.i+1} of ${n}`;
   $("scoreLbl").textContent=`Score ${score()}`;
   $("img").src=g.src; $("img").alt=`Graphic ${state.i+1}: ${g.title}`;
-  const s=$("slider"); s.disabled=false; s.value=50; $("pct").textContent="50%";
-  $("band").hidden=true; $("reveal").hidden=true; $("lockBtn").hidden=false;
-  state.locked=false;
+  state.pick=null; state.locked=false;
+  cells.forEach(c=>c.classList.remove("on","ans"));
+  const out=$("levelOut"); out.textContent="Drag or tap to rate"; out.classList.add("unset");
+  scale.removeAttribute("aria-valuenow"); scale.removeAttribute("aria-valuetext"); scale.removeAttribute("aria-disabled");
+  $("rate").classList.remove("locked");
+  $("err").hidden=true; $("reveal").hidden=true; $("lockBtn").hidden=false;
 }
 
 function lock(){
   if(state.locked) return;
-  const g=current(), v=Math.round(+$("slider").value);
-  const [lo,hi]=g.range, correct=v>=lo&&v<=hi;
-  const off=correct?0:(v<lo?lo-v:v-hi);
+  if(state.pick==null){ $("err").hidden=false; return; }
+  const g=current(), v=state.pick, diff=Math.abs(v-g.answer), correct=diff===0;
   state.locked=true;
   state.answers.push({id:g.id,rating:v,correct});
-  $("slider").disabled=true;
-  const band=$("band"); band.style.setProperty("--lo",lo/100); band.style.setProperty("--hi",hi/100); band.hidden=false;
+  $("rate").classList.add("locked"); scale.setAttribute("aria-disabled","true");
+  cells[g.answer].classList.add("ans");
   $("lockBtn").hidden=true;
   $("scoreLbl").textContent=`Score ${score()}`;
 
   const chip=$("chip"); let cls,label,line;
-  if(correct){ cls="ok"; label="Correct"; line=g.human?"Right. This one's human-made.":"Nice catch. You landed in the range."; }
-  else if(off<=15){ cls="near"; label="Close"; line=`Almost. You were ${off} points off.`; }
+  if(correct){ cls="ok"; label="Correct"; line=g.human?"Right. This one's human-made.":"Nice catch. You got it."; }
+  else if(diff===1){ cls="near"; label="Close"; line="Almost. You were one level off."; }
   else{
     cls="miss"; label="Not quite";
     if(g.human) line="This one is human-made.";
-    else if(v<lo) line="There's a bit more AI smell here.";
+    else if(v<g.answer) line="There's a bit more AI smell here.";
     else line="There's slop here, but less than you thought.";
   }
   chip.className="chip "+cls; chip.textContent=label;
   $("vline").textContent=line;
-  $("compare").textContent=`You said ${v}%. It's ${g.slop}% slop (anything from ${fmtRange(g.range)} counts).`;
-  $("sigHead").textContent="Why?";
+  $("compare").textContent=`You said ${LEVELS[v]}. This one is ${g.level}.`;
   $("notes").textContent=g.notes;
   $("nextBtn").textContent=state.i===state.order.length-1?"See my score":"Next graphic";
   $("reveal").hidden=false;
@@ -287,8 +311,9 @@ async function finish(){
   $("recap").replaceChildren(...state.answers.map(a=>{
     const g=GRAPHICS.find(x=>x.id===a.id), li=document.createElement("li");
     const l=document.createElement("span"); l.textContent=g.title+(g.human?" (human-made)":"");
-    const r=document.createElement("span"); r.className="num";
-    r.innerHTML=`${a.rating}% <span class="muted">/ ${g.slop}%</span> <span class="mark">${a.correct?"✓":"✕"}</span>`;
+    const r=document.createElement("span");
+    r.innerHTML=`<span></span> <span class="muted">/ <span></span></span> <span class="mark">${a.correct?"✓":"✕"}</span>`;
+    r.children[0].textContent=LEVELS[a.rating]; r.children[1].children[0].textContent=g.level;
     li.append(l,r); return li;
   }));
   $("savedNote").hidden=true;
@@ -313,20 +338,35 @@ function playId(){
 /* ===== Presenter view (open with #room) ===== */
 let plays=[], pollTimer=null, loadedOnce=false;
 
-function mini(range,avg){
-  const w=document.createElement("div"); w.className="mini";
-  const b=document.createElement("div"); b.className="b"; b.style.left=range[0]+"%"; b.style.width=Math.max(1,range[1]-range[0])+"%";
-  w.append(b);
-  if(avg!=null){ const m=document.createElement("div"); m.className="m"; m.style.left=avg+"%"; w.append(m); }
+function votesList(s){
+  const w=document.createElement("div"); w.className="votes";
+  const max=Math.max(1,...s.counts);
+  LEVELS.forEach((name,i)=>{
+    const r=document.createElement("div"); r.className="vr"+(i===s.g.answer?" ans":"");
+    const l=document.createElement("span"); l.textContent=name;
+    const t=document.createElement("div"); t.className="t";
+    const f=document.createElement("div"); f.className="f"; f.style.width=(s.counts[i]/max*100)+"%"; t.append(f);
+    const c=document.createElement("span"); c.className="c num"; c.textContent=s.counts[i];
+    r.append(l,t,c); w.append(r);
+  });
+  return w;
+}
+function spark(s){
+  const w=document.createElement("div"); w.className="spark"; w.setAttribute("aria-hidden","true");
+  const max=Math.max(1,...s.counts);
+  s.counts.forEach((c,i)=>{ const b=document.createElement("i"); if(i===s.g.answer) b.className="ans"; b.style.height=(c/max*100)+"%"; w.append(b); });
   return w;
 }
 
 function renderRoom(){
   const body=$("roomBody");
   const stats=GRAPHICS.map(g=>{
-    const rs=plays.flatMap(p=>(p.answers||[]).filter(a=>a.id===g.id));
-    const n=rs.length, c=rs.filter(a=>a.correct).length;
-    return {g,n,pct:n?Math.round(c/n*100):null,avg:n?Math.round(rs.reduce((s,a)=>s+a.rating,0)/n):null};
+    // ratings outside 0–4 are left over from the old percentage version and are skipped
+    const rs=plays.flatMap(p=>(p.answers||[]).filter(a=>a.id===g.id&&a.rating>=0&&a.rating<LEVELS.length));
+    const counts=LEVELS.map((_,i)=>rs.filter(a=>a.rating===i).length);
+    const n=rs.length, c=counts[g.answer]||0;
+    const most=n?counts.indexOf(Math.max(...counts)):null;
+    return {g,n,counts,most,pct:n?Math.round(c/n*100):null};
   });
   if(!plays.length){
     body.innerHTML=`<div class="empty">No results yet. Scores appear here as soon as people finish the game.</div>`;
@@ -342,7 +382,7 @@ function renderRoom(){
   const m=document.createElement("div"); m.className="metrics";
   m.innerHTML=`<div class="metric"><span class="muted">Players</span><span class="num">${plays.length}</span></div>
     <div class="metric"><span class="muted">Average score</span><span class="num">${avgScore.toFixed(1)} <span class="muted" style="font-size:18px">of ${total}</span></span></div>
-    <div class="metric"><span class="muted">Answers in range</span><span class="num">${overall}%</span></div>`;
+    <div class="metric"><span class="muted">Answers correct</span><span class="num">${overall}%</span></div>`;
   wrap.append(m);
 
   const sec=document.createElement("section"); sec.style.cssText="display:flex;flex-direction:column;gap:14px";
@@ -355,8 +395,8 @@ function renderRoom(){
     const t=document.createElement("div"); t.style.cssText="display:flex;justify-content:space-between;gap:8px;align-items:baseline";
     t.innerHTML=`<strong></strong><span class="num" style="white-space:nowrap">${s.pct}% correct</span>`; t.querySelector("strong").textContent=s.g.title+(s.g.human?" (human)":"");
     const cmp=document.createElement("p"); cmp.className="muted"; cmp.style.fontSize="14px";
-    cmp.textContent=`Room average ${s.avg}%. Answer ${s.g.slop}%.`;
-    b.append(t,mini(s.g.range,s.avg),cmp); c.append(img,b); grid.append(c);
+    cmp.textContent=`Most said ${LEVELS[s.most]}. Answer: ${s.g.level}.`;
+    b.append(t,votesList(s),cmp); c.append(img,b); grid.append(c);
   });
   sec.append(grid); wrap.append(sec);
 
@@ -369,8 +409,8 @@ function renderRoom(){
     const t=document.createElement("div"); t.className="t";
     const name=document.createElement("div"); name.textContent=s.g.title+(s.g.human?" (human)":"");
     const sub=document.createElement("div"); sub.className="muted"; sub.style.fontSize="13px";
-    sub.textContent=s.n?`Room avg ${s.avg}% · answer ${s.g.slop}%`:`No ratings yet · answer ${s.g.slop}%`;
-    t.append(name,sub,mini(s.g.range,s.avg));
+    sub.textContent=s.n?`Answer: ${s.g.level} · most said ${LEVELS[s.most]}`:`Answer: ${s.g.level} · no ratings yet`;
+    t.append(name,sub); if(s.n) t.append(spark(s));
     const p=document.createElement("div"); p.className="num"; p.style.textAlign="right"; p.textContent=s.n?`${s.pct}% correct`:"–";
     r.append(img,t,p); rows.append(r);
   });
@@ -409,7 +449,6 @@ $("startBtn").onclick=start;
 $("lockBtn").onclick=lock;
 $("nextBtn").onclick=next;
 $("againBtn").onclick=start;
-$("slider").addEventListener("input",e=>{ $("pct").textContent=Math.round(e.target.value)+"%"; });
 window.addEventListener("hashchange",route);
 route();
 </script>

@@ -9,7 +9,7 @@ A phone-first workshop game. Players rate how much AI slop is in each graphic, s
 
 | File | What it is |
 |---|---|
-| `index.html` | The whole game. Graphics, answers and notes are in the `GRAPHICS` list near the top of the script. |
+| `index.html` | The whole game. The five levels are in `LEVELS`, and graphics, answers and notes are in the `GRAPHICS` list near the top of the script. |
 | `images-web/` | The copies the game uses: JPEGs at most 1200 px on the longest side, about 4 MB in total. |
 | `images/` | Your full-size originals. The game doesn't use these, so they don't need to be uploaded. |
 | `google-apps-script/Code.gs` | The script that turns your Google Sheet into the results collector. |
@@ -54,16 +54,19 @@ sips -s format jpeg -s formatOptions 88 -Z 1200 images/14.png --out images-web/1
 Leave out `-Z 1200` if the image is already smaller than 1200 px, or sips will enlarge it and soften the details. Then add or edit its entry in `GRAPHICS` in `index.html`:
 
 ```js
-{"id": "g14", "title": "New poster", "src": "images-web/14.jpg", "slop": 70, "range": [60, 80], "human": false,
+{"id": "g14", "title": "New poster", "src": "images-web/14.jpg", "level": "A lot", "human": false,
  "notes": "What gives it away."},
 ```
 
 - `id`: a short, unique code. Don't change it once people have played, because results are matched by id.
-- `slop`: your answer, shown on the reveal and in the presenter view.
-- `range`: what counts as correct, both ends included. It's set to `slop` ±10.
-- `human: true` marks a human-made control. Its notes appear under "Why it's human-made".
-- `notes`: the text revealed after rating.
+- `level`: the correct answer. It must be one of `None`, `Barely any`, `Some`, `A lot` or `Total slop`, spelled exactly like that. Picking it exactly scores a point, and one level off shows "Close".
+- `human: true` marks a human-made control. It counts toward the score like any other graphic.
+- `notes`: the text revealed after rating, under "Why?".
 - Any entry without `src` shows a gray placeholder.
+
+## Reading the Sheet
+
+The **Ratings** tab stores each rating as a number: 0 = None, 1 = Barely any, 2 = Some, 3 = A lot, 4 = Total slop. The **Correct** column says whether it matched your answer.
 
 ## Before the workshop
 
