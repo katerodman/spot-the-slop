@@ -80,9 +80,16 @@ p{margin:0}
 .center{text-align:center;align-items:center}
 .score-big{font-family:var(--mono);font-size:64px;line-height:1;font-variant-numeric:tabular-nums}
 .recap{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
-.recap li{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
-.recap li>span:last-child{text-align:right;white-space:nowrap}
+.recap li{border-bottom:1px solid var(--line);font-size:14px}
+.rc-head{appearance:none;background:none;border:0;padding:12px 0;width:100%;display:flex;justify-content:space-between;align-items:center;gap:12px;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.rc-head:focus-visible{outline:2px solid var(--fg);outline-offset:2px;border-radius:4px}
+.rc-head .ans{text-align:right;white-space:nowrap;display:flex;align-items:center;gap:8px}
+.rc-head .chev{display:inline-block;width:8px;height:8px;border-right:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted);transform:rotate(45deg) translateY(-2px);transition:transform .15s}
+.rc-head[aria-expanded="true"] .chev{transform:rotate(-135deg) translateY(-2px)}
 .recap .mark{font-weight:600}
+.rc-body{display:flex;flex-direction:column;gap:10px;padding:0 0 16px}
+.rc-body .frame img{max-height:60vh}
+.rc-body .notes{font-size:15px}
 
 .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
 .metric{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px}
@@ -155,6 +162,7 @@ img{max-width:100%}
     <p class="muted" id="tierNote"></p>
     <p class="muted" id="savedNote" hidden style="font-size:14px">Your result was added to the room's results.</p>
   </div>
+  <p class="muted" style="font-size:14px">Tap any graphic to see it again.</p>
   <ul class="recap" id="recap"></ul>
   <button class="btn ghost" id="againBtn">Play again</button>
 </main>
@@ -308,13 +316,29 @@ async function finish(){
   const s=score(), n=state.order.length, [t,note]=tierFor(s/n);
   $("finalScore").textContent=`${s} of ${n}`;
   $("tier").textContent=t; $("tierNote").textContent=note;
-  $("recap").replaceChildren(...state.answers.map(a=>{
+  // Each row opens to show the graphic again, with the answer and notes, for review
+  $("recap").replaceChildren(...state.answers.map((a,k)=>{
     const g=GRAPHICS.find(x=>x.id===a.id), li=document.createElement("li");
+    const head=document.createElement("button"); head.className="rc-head"; head.type="button";
+    head.setAttribute("aria-expanded","false"); head.setAttribute("aria-controls","rc-"+k);
     const l=document.createElement("span"); l.textContent=g.title+(g.human?" (human-made)":"");
-    const r=document.createElement("span");
-    r.innerHTML=`<span></span> <span class="muted">/ <span></span></span> <span class="mark">${a.correct?"✓":"✕"}</span>`;
-    r.children[0].textContent=LEVELS[a.rating]; r.children[1].children[0].textContent=g.level;
-    li.append(l,r); return li;
+    const r=document.createElement("span"); r.className="ans";
+    r.innerHTML=`<span><span></span> <span class="muted">/ <span></span></span></span> <span class="mark">${a.correct?"✓":"✕"}</span><span class="chev" aria-hidden="true"></span>`;
+    r.children[0].children[0].textContent=LEVELS[a.rating]; r.children[0].children[1].children[0].textContent=g.level;
+    head.append(l,r);
+    const body=document.createElement("div"); body.className="rc-body"; body.id="rc-"+k; body.hidden=true;
+    const fig=document.createElement("figure"); fig.className="frame";
+    const img=document.createElement("img"); img.alt=g.title; img.loading="lazy"; fig.append(img);
+    const cmp=document.createElement("p"); cmp.className="muted"; cmp.textContent=`You said ${LEVELS[a.rating]}. This one is ${g.level}.`;
+    const why=document.createElement("h3"); why.textContent="Why?";
+    const notes=document.createElement("p"); notes.className="notes"; notes.textContent=g.notes;
+    body.append(fig,cmp,why,notes);
+    head.onclick=()=>{
+      const open=head.getAttribute("aria-expanded")!=="true";
+      if(open&&!img.src) img.src=g.src;
+      head.setAttribute("aria-expanded",String(open)); body.hidden=!open;
+    };
+    li.append(head,body); return li;
   }));
   $("savedNote").hidden=true;
   show("end");
