@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Spot the Slop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=Public+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: one narrow phone column for play; a wider grid for the projected room view. Grayscale chrome so the graphics carry all the color. */
+:root{
+  --bg:#f5f6f7; --surface:#ffffff; --fg:#17191c; --muted:#5b6169; --line:#dcdfe3; --track:#e4e6e9;
+  --ok-bg:#dbeee1; --ok-line:#3d8857; --ok-fg:#1d5733;
+  --near-bg:#f2e9d5; --near-fg:#694b10;
+  --miss-bg:#eceef0; --miss-fg:#3c4148;
+  --btn:#17191c; --btn-fg:#ffffff;
+  --font:"Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#121315; --surface:#1b1d20; --fg:#eceef0; --muted:#9aa0a8; --line:#2e3135; --track:#2c2f33;
+  --ok-bg:#163522; --ok-line:#5fb07c; --ok-fg:#a9dcbb;
+  --near-bg:#3a2e14; --near-fg:#ebd29b;
+  --miss-bg:#26292d; --miss-fg:#c9cdd2;
+  --btn:#eceef0; --btn-fg:#17191c; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121315; --surface:#1b1d20; --fg:#eceef0; --muted:#9aa0a8; --line:#2e3135; --track:#2c2f33;
+  --ok-bg:#163522; --ok-line:#5fb07c; --ok-fg:#a9dcbb;
+  --near-bg:#3a2e14; --near-fg:#ebd29b;
+  --miss-bg:#26292d; --miss-fg:#c9cdd2;
+  --btn:#eceef0; --btn-fg:#17191c; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
+.app{max-width:480px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.app.wide{max-width:1040px}
+h1,h2,h3{margin:0;text-wrap:balance;font-weight:600;letter-spacing:-0.01em}
+h1{font-size:28px;line-height:1.15}
+h2{font-size:18px}
+h3{font-size:13px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);font-weight:500}
+p{margin:0}
+.muted{color:var(--muted)}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.btn{appearance:none;border:0;border-radius:10px;background:var(--btn);color:var(--btn-fg);font:600 16px/1 var(--font);padding:16px;width:100%;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--line)}
+.btn:focus-visible,.link:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
+.btn:active{transform:scale(0.99)}
+.link{background:none;border:0;padding:0;color:var(--muted);font:inherit;font-size:14px;text-decoration:underline;cursor:pointer}
+
+.bar{display:flex;justify-content:space-between;font-size:14px;color:var(--muted)}
+.frame{margin:0;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.frame img{display:block;width:100%;height:auto;max-height:58vh;object-fit:contain}
+
+.pct{font-family:var(--mono);font-size:44px;line-height:1;text-align:center;font-variant-numeric:tabular-nums}
+.slider{position:relative;height:48px}
+.slider::before{content:"";position:absolute;left:0;right:0;top:50%;height:8px;margin-top:-4px;border-radius:4px;background:var(--track)}
+.band{position:absolute;top:50%;height:16px;margin-top:-8px;border-radius:4px;background:var(--ok-bg);border:1.5px solid var(--ok-line);
+  left:calc(16px + (100% - 32px) * var(--lo));width:calc((100% - 32px) * (var(--hi) - var(--lo)) + 2px);min-width:6px}
+input[type=range]{position:relative;-webkit-appearance:none;appearance:none;width:100%;height:48px;margin:0;background:transparent;cursor:grab;touch-action:pan-y}
+input[type=range]:active{cursor:grabbing}
+input[type=range]::-webkit-slider-runnable-track{height:8px;background:transparent}
+input[type=range]::-moz-range-track{height:8px;background:transparent}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:32px;height:32px;margin-top:-12px;border-radius:50%;background:var(--fg);border:4px solid var(--surface);box-shadow:0 0 0 1px var(--fg)}
+input[type=range]::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:var(--fg);border:4px solid var(--surface);box-shadow:0 0 0 1px var(--fg)}
+input[type=range]:focus-visible{outline:none}
+input[type=range]:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 1px var(--fg),0 0 0 5px var(--track)}
+input[type=range]:disabled{cursor:default;opacity:1}
+.ends{display:flex;justify-content:space-between;font-size:14px;color:var(--muted);margin-top:-6px}
+.rate{display:flex;flex-direction:column;gap:12px}
+
+.reveal{display:flex;flex-direction:column;gap:14px;padding-top:4px}
+.verdict{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.chip{font-size:13px;font-weight:600;padding:4px 10px;border-radius:999px}
+.chip.ok{background:var(--ok-bg);color:var(--ok-fg)}
+.chip.near{background:var(--near-bg);color:var(--near-fg)}
+.chip.miss{background:var(--miss-bg);color:var(--miss-fg)}
+.vline{font-size:20px;font-weight:600;line-height:1.3;text-wrap:balance}
+.signals{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+.signals li{padding-left:2px}
+
+.center{text-align:center;align-items:center}
+.score-big{font-family:var(--mono);font-size:64px;line-height:1;font-variant-numeric:tabular-nums}
+.recap{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+.recap li{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+.recap .mark{font-weight:600}
+
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.metric{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px}
+.metric .num{font-size:32px;line-height:1.1;display:block;margin-top:4px}
+.missed{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.mcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;min-width:0}
+.mcard img{display:block;width:100%;aspect-ratio:4/3;object-fit:contain;background:var(--bg)}
+.mcard .body{padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.mini{position:relative;height:16px}
+.mini::before{content:"";position:absolute;left:0;right:0;top:6px;height:4px;border-radius:2px;background:var(--track)}
+.mini .b{position:absolute;top:2px;height:12px;border-radius:3px;background:var(--ok-bg);border:1.5px solid var(--ok-line)}
+.mini .m{position:absolute;top:0;width:4px;height:16px;margin-left:-2px;border-radius:2px;background:var(--fg)}
+.rows{display:flex;flex-direction:column;border-top:1px solid var(--line)}
+.row{display:grid;grid-template-columns:56px minmax(0,1fr) 120px;gap:14px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+.row img{width:56px;height:42px;object-fit:cover;border-radius:6px;background:var(--surface)}
+.row .t{min-width:0}
+.empty{background:var(--surface);border:1px dashed var(--line);border-radius:12px;padding:28px;text-align:center;color:var(--muted)}
+.inline-confirm{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.inline-confirm .btn{width:auto;padding:10px 14px;font-size:14px}
+@media (prefers-reduced-motion:no-preference){.reveal:not([hidden]){animation:rise .25s ease-out}@keyframes rise{from{opacity:.4;transform:translateY(6px)}to{opacity:1;transform:none}}}
+@media (max-width:520px){.row{grid-template-columns:48px minmax(0,1fr) 88px}.row img{width:48px;height:36px}}
+img{max-width:100%}
+</style>
+</head>
+<body>
+
+<!-- Intro -->
+<main class="app" id="intro">
+  <p class="muted" style="font-size:14px">Workshop game</p>
+  <h1>Spot the Slop</h1>
+  <p>You'll see <span id="introCount" class="num">12</span> graphics. Some were made with AI, some by people. For each one, drag the slider to say how much AI slop you see, then lock it in to find out what gives it away.</p>
+  <button class="btn" id="startBtn">Start</button>
+</main>
+
+<!-- Play -->
+<main class="app" id="play" hidden>
+  <div class="bar"><span id="count" class="num">1 of 12</span><span id="scoreLbl" class="num">Score 0</span></div>
+  <figure class="frame"><img id="img" alt=""></figure>
+  <div class="rate">
+    <output class="pct" id="pct" for="slider">50%</output>
+    <div class="slider">
+      <div class="band" id="band" hidden></div>
+      <input type="range" id="slider" min="0" max="100" step="1" value="50" aria-label="How much AI slop is in this graphic">
+    </div>
+    <div class="ends"><span>Slop-free</span><span>Total slop</span></div>
+    <button class="btn" id="lockBtn">Lock it in</button>
+  </div>
+  <section class="reveal" id="reveal" hidden aria-live="polite">
+    <div class="verdict">
+      <span class="chip" id="chip"></span>
+      <p class="vline" id="vline"></p>
+      <p class="muted" id="compare"></p>
+    </div>
+    <h3 id="sigHead">Slop signals</h3>
+    <ul class="signals" id="signals"></ul>
+    <button class="btn" id="nextBtn">Next graphic</button>
+  </section>
+</main>
+
+<!-- End -->
+<main class="app" id="end" hidden>
+  <div class="center" style="display:flex;flex-direction:column;gap:8px;padding-top:12px">
+    <p class="muted">You spotted</p>
+    <p class="score-big" id="finalScore">0 of 12</p>
+    <h1 id="tier" style="font-size:24px"></h1>
+    <p class="muted" id="tierNote"></p>
+    <p class="muted" id="savedNote" hidden style="font-size:14px">Your result was added to the room's results.</p>
+  </div>
+  <ul class="recap" id="recap"></ul>
+  <button class="btn ghost" id="againBtn">Play again</button>
+</main>
+
+<!-- Room (presenter) -->
+<main class="app wide" id="room" hidden>
+  <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap">
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <p class="muted" style="font-size:14px">Presenter view</p>
+      <h1>How the room did</h1>
+    </div>
+    <p class="muted num" id="updated" style="font-size:13px"></p>
+  </div>
+  <div id="roomBody"></div>
+</main>
+
+<script>
+/* ===== Google Sheet connection =====
+   Paste the web app URL from your Apps Script deployment (see README.md). */
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx14VAzKdXoS8EOQIGESQsOurtlaFfd3FvTGbrYtgT_T_J5lfXRDAjDf8CrTyg0xuwc/exec";
+const sheetReady = () => /^https:\/\/script\.google\.com\//.test(SCRIPT_URL);
+
+/* ===== Your content =====
+   One entry per graphic. Swap the placeholder images and text for the real ones.
+   range: the correct answer range in percent, inclusive. human: true for human-made controls. */
+const GRAPHICS = [
+  {id:"g01", title:"Event poster", range:[70,80], human:false, signals:["Lettering on the banner melts into nonsense halfway through","Hands have a sixth finger tucked behind the cup","Every surface has the same waxy sheen"]},
+  {id:"g02", title:"Campaign social tile", range:[85,100], human:false, signals:["Background crowd faces smear into each other","Logo is a near-miss of a real brand mark","Lighting comes from two directions at once"]},
+  {id:"g03", title:"Infographic", range:[60,75], human:false, signals:["Chart bars don't match the numbers printed on them","Icons share a generic glossy 3D style","Small text is shaped like words but isn't readable"]},
+  {id:"g04", title:"Illustrated header", range:[0,15], human:true, signals:["Line weight varies the way a real brush stroke does","Small imperfections repeat consistently, like a signature style","Text is set in a real typeface with correct spacing"]},
+  {id:"g05", title:"Fundraising banner", range:[75,90], human:false, signals:["Animal fur turns to smooth plastic near the edges","Shadows don't line up with the objects casting them","Composition is centered and symmetrical in a stock way"]},
+  {id:"g06", title:"Book cover", range:[40,55], human:false, signals:["Title type is human-set but the background art is generated","Background texture repeats in a tiled, uncanny pattern","Details dissolve where the eye isn't drawn"]},
+  {id:"g07", title:"Product photo", range:[0,15], human:true, signals:["Reflections match the room and the light source","Label text is sharp and readable at every size","Natural noise and grain across the whole frame"]},
+  {id:"g08", title:"Newsletter hero", range:[80,95], human:false, signals:["Over-saturated sunset glow on everything","Plants and leaves merge into one another","Hair strands blend into the background"]},
+  {id:"g09", title:"Workshop flyer", range:[55,70], human:false, signals:["Map pins point to places that don't exist","Typography mixes three almost-identical fonts","QR code is a decorative pattern, not a working code"]},
+  {id:"g10", title:"Character mascot", range:[70,85], human:false, signals:["Eyes are slightly different sizes and shapes","Outfit details change between the left and right side","Glossy, airbrushed rendering on a flat illustration"]},
+  {id:"g11", title:"Editorial illustration", range:[0,15], human:true, signals:["Deliberate, readable composition choices","Consistent perspective across every object","Hand-lettered text that actually spells words"]},
+  {id:"g12", title:"Annual report cover", range:[65,80], human:false, signals:["Building windows bend and don't line up","People in the background have no feet","Sky gradient is too smooth, with no texture or noise"]},
+];
+
+/* Placeholder art until the real images arrive. Replace with: GRAPHICS[i].src = "images/g01.jpg" */
+function placeholder(i, label){
+  const tones=[["#d9dde2","#9aa3ad","#4d5560"],["#e3ddd5","#a8998a","#5a4c40"],["#d6e0dc","#8fa69d","#3f5650"],["#e0dbe4","#a198ab","#544a5e"]];
+  const [a,b,c]=tones[i%tones.length];
+  const shapes=[
+    `<circle cx="300" cy="300" r="150" fill="${b}"/><rect x="120" y="480" width="360" height="120" rx="12" fill="${c}"/>`,
+    `<rect x="90" y="120" width="420" height="300" rx="16" fill="${b}"/><circle cx="420" cy="520" r="90" fill="${c}"/>`,
+    `<path d="M80 600 L300 160 L520 600 Z" fill="${b}"/><circle cx="300" cy="420" r="60" fill="${c}"/>`,
+    `<rect x="100" y="100" width="180" height="500" rx="12" fill="${b}"/><rect x="320" y="260" width="180" height="340" rx="12" fill="${c}"/>`
+  ][i%4];
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 750"><rect width="600" height="750" fill="${a}"/>${shapes}<text x="300" y="700" text-anchor="middle" font-family="system-ui,sans-serif" font-size="30" fill="${c}">Placeholder: ${label}</text></svg>`;
+  return "data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg);
+}
+GRAPHICS.forEach((g,i)=>{ if(!g.src) g.src=placeholder(i,g.title); });
+
+const $=id=>document.getElementById(id);
+const screens=["intro","play","end","room"];
+function show(name){ screens.forEach(s=>$(s).hidden=s!==name); window.scrollTo(0,0); }
+
+let state={order:[],i:0,answers:[],locked:false};
+
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+const score=()=>state.answers.filter(a=>a.correct).length;
+const fmtRange=r=>r[0]===r[1]?`${r[0]}%`:`${r[0]}–${r[1]}%`;
+
+function start(){
+  state={order:shuffle(GRAPHICS.map(g=>g.id)),i:0,answers:[],locked:false};
+  show("play"); renderItem();
+}
+function current(){ return GRAPHICS.find(g=>g.id===state.order[state.i]); }
+
+function renderItem(){
+  const g=current(), n=state.order.length;
+  $("count").textContent=`${state.i+1} of ${n}`;
+  $("scoreLbl").textContent=`Score ${score()}`;
+  $("img").src=g.src; $("img").alt=`Graphic ${state.i+1}: ${g.title}`;
+  const s=$("slider"); s.disabled=false; s.value=50; $("pct").textContent="50%";
+  $("band").hidden=true; $("reveal").hidden=true; $("lockBtn").hidden=false;
+  state.locked=false;
+}
+
+function lock(){
+  if(state.locked) return;
+  const g=current(), v=Math.round(+$("slider").value);
+  const [lo,hi]=g.range, correct=v>=lo&&v<=hi;
+  const off=correct?0:(v<lo?lo-v:v-hi);
+  state.locked=true;
+  state.answers.push({id:g.id,rating:v,correct});
+  $("slider").disabled=true;
+  const band=$("band"); band.style.setProperty("--lo",lo/100); band.style.setProperty("--hi",hi/100); band.hidden=false;
+  $("lockBtn").hidden=true;
+  $("scoreLbl").textContent=`Score ${score()}`;
+
+  const chip=$("chip"); let cls,label,line;
+  if(correct){ cls="ok"; label="Correct"; line=g.human?"Right. This one's human-made.":"Nice catch. You landed in the range."; }
+  else if(off<=15){ cls="near"; label="Close"; line=`Almost. You were ${off} points off.`; }
+  else{
+    cls="miss"; label="Not quite";
+    if(g.human) line="Tricky. This one's actually human-made.";
+    else if(v<lo) line="This one hides it well. Here's what gives it away.";
+    else line="There's slop here, but less than you thought.";
+  }
+  chip.className="chip "+cls; chip.textContent=label;
+  $("vline").textContent=line;
+  $("compare").textContent=`You said ${v}%. The answer is ${fmtRange(g.range)}.`;
+  $("sigHead").textContent=g.human?"Signs it's human-made":"Slop signals";
+  const ul=$("signals"); ul.replaceChildren(...g.signals.map(t=>{const li=document.createElement("li"); li.textContent=t; return li;}));
+  $("nextBtn").textContent=state.i===state.order.length-1?"See my score":"Next graphic";
+  $("reveal").hidden=false;
+  const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+  requestAnimationFrame(()=>$("reveal").scrollIntoView({behavior:reduce?"auto":"smooth",block:"start"}));
+}
+
+function next(){
+  if(state.i<state.order.length-1){ state.i++; renderItem(); window.scrollTo(0,0); }
+  else finish();
+}
+
+function tierFor(frac){
+  if(frac>=0.9) return ["Sharp-eyed slop spotter","Hardly anything gets past you."];
+  if(frac>=0.7) return ["Seasoned slop spotter","You know the tells. A few still slipped by."];
+  if(frac>=0.4) return ["Getting your eye in","You're picking up the patterns. Look at the misses below."];
+  return ["Fresh eyes","Now you know what to look for. The recap below is a good cheat sheet."];
+}
+
+async function finish(){
+  const s=score(), n=state.order.length, [t,note]=tierFor(s/n);
+  $("finalScore").textContent=`${s} of ${n}`;
+  $("tier").textContent=t; $("tierNote").textContent=note;
+  $("recap").replaceChildren(...state.answers.map(a=>{
+    const g=GRAPHICS.find(x=>x.id===a.id), li=document.createElement("li");
+    const l=document.createElement("span"); l.textContent=g.title+(g.human?" (human-made)":"");
+    const r=document.createElement("span"); r.className="num";
+    r.innerHTML=`${a.rating}% <span class="muted">/ ${fmtRange(g.range)}</span> <span class="mark">${a.correct?"✓":"✕"}</span>`;
+    li.append(l,r); return li;
+  }));
+  $("savedNote").hidden=true;
+  show("end");
+  if(!sheetReady()) return;
+  const payload={id:playId(),score:s,total:n,answers:state.answers.map(a=>({id:a.id,rating:a.rating,correct:a.correct}))};
+  // text/plain body keeps this a simple request, so Apps Script accepts it without a CORS preflight
+  for(let attempt=0;attempt<3;attempt++){
+    try{
+      const r=await fetch(SCRIPT_URL,{method:"POST",body:JSON.stringify(payload)});
+      const out=await r.json();
+      if(out.ok){ $("savedNote").hidden=false; return; }
+      return;
+    }catch(e){ await new Promise(res=>setTimeout(res,1500*(attempt+1))); }
+  }
+}
+function playId(){
+  const b=new Uint8Array(8); crypto.getRandomValues(b);
+  return "p-"+Array.from(b,x=>x.toString(16).padStart(2,"0")).join("");
+}
+
+/* ===== Presenter view (open with #room) ===== */
+let plays=[], pollTimer=null, loadedOnce=false;
+
+function mini(range,avg){
+  const w=document.createElement("div"); w.className="mini";
+  const b=document.createElement("div"); b.className="b"; b.style.left=range[0]+"%"; b.style.width=Math.max(1,range[1]-range[0])+"%";
+  w.append(b);
+  if(avg!=null){ const m=document.createElement("div"); m.className="m"; m.style.left=avg+"%"; w.append(m); }
+  return w;
+}
+
+function renderRoom(){
+  const body=$("roomBody");
+  const stats=GRAPHICS.map(g=>{
+    const rs=plays.flatMap(p=>(p.answers||[]).filter(a=>a.id===g.id));
+    const n=rs.length, c=rs.filter(a=>a.correct).length;
+    return {g,n,pct:n?Math.round(c/n*100):null,avg:n?Math.round(rs.reduce((s,a)=>s+a.rating,0)/n):null};
+  });
+  if(!plays.length){
+    body.innerHTML=`<div class="empty">No results yet. Scores appear here as soon as people finish the game.</div>`;
+    return;
+  }
+  const avgScore=plays.reduce((s,p)=>s+(p.score||0),0)/plays.length;
+  const total=plays[0].total||GRAPHICS.length;
+  const allAns=plays.flatMap(p=>p.answers||[]);
+  const overall=allAns.length?Math.round(allAns.filter(a=>a.correct).length/allAns.length*100):0;
+  const ranked=stats.filter(s=>s.n).sort((a,b)=>a.pct-b.pct||b.n-a.n);
+
+  const wrap=document.createElement("div"); wrap.style.cssText="display:flex;flex-direction:column;gap:28px";
+  const m=document.createElement("div"); m.className="metrics";
+  m.innerHTML=`<div class="metric"><span class="muted">Players</span><span class="num">${plays.length}</span></div>
+    <div class="metric"><span class="muted">Average score</span><span class="num">${avgScore.toFixed(1)} <span class="muted" style="font-size:18px">of ${total}</span></span></div>
+    <div class="metric"><span class="muted">Answers in range</span><span class="num">${overall}%</span></div>`;
+  wrap.append(m);
+
+  const sec=document.createElement("section"); sec.style.cssText="display:flex;flex-direction:column;gap:14px";
+  const h=document.createElement("h2"); h.textContent="Most missed"; sec.append(h);
+  const grid=document.createElement("div"); grid.className="missed";
+  ranked.slice(0,3).forEach(s=>{
+    const c=document.createElement("article"); c.className="mcard";
+    const img=document.createElement("img"); img.src=s.g.src; img.alt=s.g.title;
+    const b=document.createElement("div"); b.className="body";
+    const t=document.createElement("div"); t.style.cssText="display:flex;justify-content:space-between;gap:8px;align-items:baseline";
+    t.innerHTML=`<strong></strong><span class="num" style="white-space:nowrap">${s.pct}% correct</span>`; t.querySelector("strong").textContent=s.g.title+(s.g.human?" (human)":"");
+    const cmp=document.createElement("p"); cmp.className="muted"; cmp.style.fontSize="14px";
+    cmp.textContent=`Room average ${s.avg}%. Answer ${fmtRange(s.g.range)}.`;
+    b.append(t,mini(s.g.range,s.avg),cmp); c.append(img,b); grid.append(c);
+  });
+  sec.append(grid); wrap.append(sec);
+
+  const sec2=document.createElement("section"); sec2.style.cssText="display:flex;flex-direction:column;gap:10px";
+  const h2=document.createElement("h2"); h2.textContent="Every graphic"; sec2.append(h2);
+  const rows=document.createElement("div"); rows.className="rows";
+  [...ranked,...stats.filter(s=>!s.n)].forEach(s=>{
+    const r=document.createElement("div"); r.className="row";
+    const img=document.createElement("img"); img.src=s.g.src; img.alt="";
+    const t=document.createElement("div"); t.className="t";
+    const name=document.createElement("div"); name.textContent=s.g.title+(s.g.human?" (human)":"");
+    const sub=document.createElement("div"); sub.className="muted"; sub.style.fontSize="13px";
+    sub.textContent=s.n?`Room avg ${s.avg}% · answer ${fmtRange(s.g.range)}`:`No ratings yet · answer ${fmtRange(s.g.range)}`;
+    t.append(name,sub,mini(s.g.range,s.avg));
+    const p=document.createElement("div"); p.className="num"; p.style.textAlign="right"; p.textContent=s.n?`${s.pct}% correct`:"–";
+    r.append(img,t,p); rows.append(r);
+  });
+  sec2.append(rows); wrap.append(sec2);
+  body.replaceChildren(wrap);
+}
+
+async function loadRoom(){
+  try{
+    const r=await fetch(SCRIPT_URL+(SCRIPT_URL.includes("?")?"&":"?")+"t="+Date.now());
+    const out=await r.json();
+    if(!out.ok) throw new Error(out.error||"Bad response");
+    plays=out.plays||[]; loadedOnce=true; renderRoom();
+    $("updated").textContent="Updated "+new Date().toLocaleTimeString([], {hour:"numeric",minute:"2-digit",second:"2-digit"});
+  }catch(e){
+    if(!loadedOnce) $("roomBody").innerHTML=`<div class="empty">Couldn't reach the Google Sheet. Check the web app URL and that access is set to Anyone. Retrying…</div>`;
+    else $("updated").textContent="Connection lost. Retrying…";
+  }
+}
+
+function openRoom(){
+  show("room");
+  if(!sheetReady()){ $("roomBody").innerHTML=`<div class="empty">Connect the Google Sheet first: paste its web app URL into SCRIPT_URL at the top of the script.</div>`; return; }
+  if(!loadedOnce) $("roomBody").innerHTML=`<div class="empty">Loading results…</div>`;
+  loadRoom();
+  clearInterval(pollTimer); pollTimer=setInterval(loadRoom,5000);
+}
+
+function route(){
+  if(location.hash==="#room") openRoom();
+  else{ clearInterval(pollTimer); pollTimer=null; if(!$("room").hidden) show("intro"); }
+}
+
+$("introCount").textContent=GRAPHICS.length;
+$("startBtn").onclick=start;
+$("lockBtn").onclick=lock;
+$("nextBtn").onclick=next;
+$("againBtn").onclick=start;
+$("slider").addEventListener("input",e=>{ $("pct").textContent=Math.round(e.target.value)+"%"; });
+window.addEventListener("hashchange",route);
+route();
+</script>
+</body>
+</html>
