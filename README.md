@@ -9,8 +9,9 @@ A phone-first workshop game. Players rate how much AI slop is in each graphic, s
 
 | File | What it is |
 |---|---|
-| `index.html` | The whole game. Graphics, ranges and signals are in the `GRAPHICS` list near the top of the script. |
-| `images/` | Put your graphics here. |
+| `index.html` | The whole game. Graphics, answers and notes are in the `GRAPHICS` list near the top of the script. |
+| `images-web/` | The copies the game uses: JPEGs at most 1200 px on the longest side, about 4 MB in total. |
+| `images/` | Your full-size originals. The game doesn't use these, so they don't need to be uploaded. |
 | `google-apps-script/Code.gs` | The script that turns your Google Sheet into the results collector. |
 
 ## 1. Set up the Google Sheet (about 5 minutes)
@@ -36,7 +37,7 @@ If you change `Code.gs` later, use **Deploy → Manage deployments → Edit → 
 ## 2. Put it on GitHub Pages
 
 1. On GitHub, create a new **public** repository called `spot-the-slop`.
-2. Click **Add file → Upload files** and drag in `index.html`, `README.md`, and the `images` and `google-apps-script` folders. Commit.
+2. Click **Add file → Upload files** and drag in `index.html`, `README.md`, and the `images-web` and `google-apps-script` folders. Commit.
 3. Go to **Settings → Pages**. Under "Build and deployment", choose **Deploy from a branch**, then **main** and **/ (root)**. Save.
 4. After a minute or two, the site is live at `https://<your-username>.github.io/spot-the-slop/`.
 
@@ -44,16 +45,24 @@ To update later, edit or re-upload files on GitHub. Pages republishes on its own
 
 ## 3. Adding your graphics
 
-Put each image in `images/`, then edit its entry in `GRAPHICS` in `index.html`:
+Put the original in `images/`, then make a web copy in `images-web/` (on a Mac, run this from the project folder):
+
+```bash
+sips -s format jpeg -s formatOptions 88 -Z 1200 images/14.png --out images-web/14.jpg
+```
+
+Leave out `-Z 1200` if the image is already smaller than 1200 px, or sips will enlarge it and soften the details. Then add or edit its entry in `GRAPHICS` in `index.html`:
 
 ```js
-{id:"g01", title:"Event poster", src:"images/g01.jpg", range:[70,80], human:false,
- signals:["First tell","Second tell","Third tell"]},
+{"id": "g14", "title": "New poster", "src": "images-web/14.jpg", "slop": 70, "range": [60, 80], "human": false,
+ "notes": "What gives it away."},
 ```
 
 - `id`: a short, unique code. Don't change it once people have played, because results are matched by id.
-- `range`: the correct answer range in percent, both ends included.
-- `human: true` marks a human-made control. Its signals appear under "Signs it's human-made".
+- `slop`: your answer, shown on the reveal and in the presenter view.
+- `range`: what counts as correct, both ends included. It's set to `slop` ±10.
+- `human: true` marks a human-made control. Its notes appear under "Why it's human-made".
+- `notes`: the text revealed after rating.
 - Any entry without `src` shows a gray placeholder.
 
 ## Before the workshop
