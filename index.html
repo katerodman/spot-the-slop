@@ -58,7 +58,7 @@ p{margin:0}
 .rate{display:flex;flex-direction:column;gap:12px}
 .level-out{font-size:28px;font-weight:600;line-height:1.2;text-align:center;min-height:34px;letter-spacing:-0.01em}
 .level-out.unset{font-size:16px;font-weight:400;color:var(--muted);line-height:34px;letter-spacing:0}
-.levels{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;touch-action:pan-y;user-select:none;-webkit-user-select:none;cursor:pointer;border-radius:10px}
+.levels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;touch-action:pan-y;user-select:none;-webkit-user-select:none;cursor:pointer;border-radius:10px}
 .levels:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
 .lv{min-height:60px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:13px;line-height:1.2;padding:6px 4px;border-radius:8px;
   background:var(--surface);border:1px solid var(--line);color:var(--muted);transition:background .12s,color .12s}
@@ -105,7 +105,7 @@ p{margin:0}
 .vr.ans{color:var(--ok-fg);font-weight:600}
 .vr.ans .f{background:var(--ok-line)}
 .vr .c{text-align:right}
-.spark{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;align-items:end;height:24px;margin-top:6px;max-width:220px}
+.spark{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;align-items:end;height:24px;margin-top:6px;max-width:140px}
 .spark i{display:block;background:var(--muted);border-radius:2px 2px 0 0;min-height:2px}
 .spark i.ans{background:var(--ok-line)}
 .rows{display:flex;flex-direction:column;border-top:1px solid var(--line)}
@@ -125,7 +125,7 @@ img{max-width:100%}
 <main class="app" id="intro">
   <p class="muted" style="font-size:14px">Workshop game</p>
   <h1>Spot the Slop</h1>
-  <p>You'll see <span id="introCount" class="num">13</span> graphics. Some are heavy on AI slop, some have a little, and some have none. For each one, drag or tap along the scale from None to Total slop, then lock it in to find out why.</p>
+  <p>You'll see <span id="introCount" class="num">13</span> graphics. Some are heavy on AI slop, some have a little, and some have none. For each one, drag or tap along the scale from None to A lot, then lock it in to find out why.</p>
   <button class="btn" id="startBtn">Start</button>
 </main>
 
@@ -135,8 +135,8 @@ img{max-width:100%}
   <figure class="frame"><img id="img" alt=""></figure>
   <div class="rate" id="rate">
     <output class="level-out unset" id="levelOut" aria-live="polite">Drag or tap to rate</output>
-    <div class="levels" id="levels" role="slider" tabindex="0" aria-label="How much AI slop is in this graphic" aria-valuemin="0" aria-valuemax="4">
-      <div class="lv">None</div><div class="lv">Barely any</div><div class="lv">Some</div><div class="lv">A lot</div><div class="lv">Total slop</div>
+    <div class="levels" id="levels" role="slider" tabindex="0" aria-label="How much AI slop is in this graphic" aria-valuemin="0" aria-valuemax="2">
+      <div class="lv">None</div><div class="lv">Some</div><div class="lv">A lot</div>
     </div>
     <p class="err" id="err" hidden>Pick a level first.</p>
     <button class="btn" id="lockBtn">Lock it in</button>
@@ -186,26 +186,26 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx14VAzKdXoS8EOQIGES
 const sheetReady = () => /^https:\/\/script\.google\.com\//.test(SCRIPT_URL);
 
 /* ===== Your content =====
-   The five levels, in order. Ratings are saved to the Sheet as their position: 0 = None … 4 = Total slop. */
-const LEVELS = ["None","Barely any","Some","A lot","Total slop"];
+   The five levels, in order. Ratings are saved to the Sheet as their position: 0 = None, 1 = Some, 2 = A lot. */
+const LEVELS = ["None","Some","A lot"];
 
 /* One entry per graphic, from "Spot the slop notes" sheet.
    level: the correct answer (one of LEVELS). Exactly right scores a point; one level off shows "Close".
    human: true for human-made controls. notes: the text revealed after rating. */
 const GRAPHICS = [
   {"id": "g01", "title": "Joaquin Phoenix Quote", "src": "images-web/01.jpg", "level": "A lot", "human": false, "notes": "This art style is a current default that is quickly clocked as AI. If you ask for artwork without customizing the prompt in any way, you'll get something like this. Notice the leaves growing out of the arm, and the odd fur texture that also reads AI. The beige/yellow overtone also signals AI."},
-  {"id": "g02", "title": "Dragon Drawing Tutorial", "src": "images-web/02.webp", "level": "Total slop", "human": false, "notes": "This art style is another current default that is quickly clocked as AI. Notice the typo in \"Duolingo\" and how the drawing steps don't really make sense (look at the wings). The burst lines coming out from the button are also an AI signal."},
+  {"id": "g02", "title": "Dragon Drawing Tutorial", "src": "images-web/02.webp", "level": "A lot", "human": false, "notes": "This art style is another current default that is quickly clocked as AI. Notice the typo in \"Duolingo\" and how the drawing steps don't really make sense (look at the wings). The burst lines coming out from the button are also an AI signal."},
   {"id": "g03", "title": "Vegan Linguists Flyer", "src": "images-web/03.jpg", "level": "Some", "human": false, "notes": "Includes some common AI signals such as eyebrow text, and card tab accent borders in the exact AI style. There are also odd spacing decisions, and a random line under the headline, which is also common."},
   {"id": "g04", "title": "Purple Quote", "src": "images-web/04.jpg", "level": "Some", "human": false, "notes": "This has the look of a design that AI builds in HTML: a purple gradient with a glow in the corner, one word in a lighter italic, a short rule, and a spaced-out all-caps name. The serif looks like DejaVu Serif, which is the font a headless browser falls back to when the intended font doesn’t load."},
   {"id": "g05", "title": "Maryland Ballot Flyer", "src": "images-web/05.jpg", "level": "A lot", "human": false, "notes": "Common slop brushstrokes, crammed content with very little white space, common AI flyer layout"},
   {"id": "g06", "title": "Meatless Monday Ad", "src": "images-web/06.jpg", "level": "A lot", "human": false, "notes": "Common brush headings in generated AI flyers, crammed content with very little white space, doodle bursts. At least the photos seem real!"},
-  {"id": "g07", "title": "AI in Publishing", "src": "images-web/07.jpg", "level": "Total slop", "human": false, "notes": "Common pixar-style AI graphic, woman in glasses with messy bun, lots of labels, common \"It's not X, it's Y\" writing, AI sheen over everything"},
-  {"id": "g08", "title": "Global Health Art", "src": "images-web/08.jpg", "level": "Total slop", "human": false, "notes": "Current default AI art style, chibi characters with yellow overtones and burst lines"},
+  {"id": "g07", "title": "AI in Publishing", "src": "images-web/07.jpg", "level": "A lot", "human": false, "notes": "Common pixar-style AI graphic, woman in glasses with messy bun, lots of labels, common \"It's not X, it's Y\" writing, AI sheen over everything"},
+  {"id": "g08", "title": "Global Health Art", "src": "images-web/08.jpg", "level": "A lot", "human": false, "notes": "Current default AI art style, chibi characters with yellow overtones and burst lines"},
   {"id": "g09", "title": "AVA Sponsor Post", "src": "images-web/09.jpg", "level": "None", "human": true, "notes": "Human-made, no AI signals"},
   {"id": "g10", "title": "Vegan Links Ad", "src": "images-web/10.jpg", "level": "A lot", "human": false, "notes": "Common slop brushstrokes, crammed content with very little white space, common AI flyer layout"},
   {"id": "g11", "title": "Faunalytics Post", "src": "images-web/11.jpg", "level": "Some", "human": false, "notes": "AI edited the logo by mistake (reads \"faanalytics\"), odd burst lines around the heart, random line under the headline (common tell)"},
-  {"id": "g12", "title": "10x Your Growth", "src": "images-web/12.jpg", "level": "Total slop", "human": false, "notes": "Gradient headline, “✨ Launching Soon” pill, commonly AI styled frosted-glass cards, emoji icons. This is an example directly pulled from impeccable.style/slop"},
-  {"id": "g13", "title": "Calm App Ad", "src": "images-web/13.jpg", "level": "Barely any", "human": false, "notes": "We know this ad is made with AI because it had an AI graphic tag that says it was generated (removed for this test). But overall, it doesn't smell like AI, unless you really analyze the scribble lines on the side."},
+  {"id": "g12", "title": "10x Your Growth", "src": "images-web/12.jpg", "level": "A lot", "human": false, "notes": "Gradient headline, “✨ Launching Soon” pill, commonly AI styled frosted-glass cards, emoji icons. This is an example directly pulled from impeccable.style/slop"},
+  {"id": "g13", "title": "Calm App Ad", "src": "images-web/13.jpg", "level": "None", "human": false, "notes": "We know this ad is made with AI because it had an AI graphic tag that says it was generated (removed for this test). But overall, it doesn't smell like AI, unless you really analyze the scribble lines on the side."},
 ];
 
 /* Gray placeholder for any entry without a src */
@@ -243,8 +243,9 @@ scale.addEventListener("pointermove",e=>{ if(!dragging||state.locked) return; co
 scale.addEventListener("keydown",e=>{
   if(state.locked) return;
   const cur=state.pick, last=LEVELS.length-1; let i=null;
-  if(e.key==="ArrowRight"||e.key==="ArrowUp") i=cur==null?2:Math.min(last,cur+1);
-  else if(e.key==="ArrowLeft"||e.key==="ArrowDown") i=cur==null?2:Math.max(0,cur-1);
+  const mid=Math.floor(last/2);
+  if(e.key==="ArrowRight"||e.key==="ArrowUp") i=cur==null?mid:Math.min(last,cur+1);
+  else if(e.key==="ArrowLeft"||e.key==="ArrowDown") i=cur==null?mid:Math.max(0,cur-1);
   else if(e.key==="Home") i=0; else if(e.key==="End") i=last;
   else if(e.key==="Enter"&&cur!=null){ e.preventDefault(); lock(); return; }
   if(i!=null){ e.preventDefault(); setPick(i); }
@@ -385,7 +386,7 @@ function spark(s){
 function renderRoom(){
   const body=$("roomBody");
   const stats=GRAPHICS.map(g=>{
-    // ratings outside 0–4 are left over from the old percentage version and are skipped
+    // ratings outside the current levels are left over from older versions and are skipped
     const rs=plays.flatMap(p=>(p.answers||[]).filter(a=>a.id===g.id&&a.rating>=0&&a.rating<LEVELS.length));
     const counts=LEVELS.map((_,i)=>rs.filter(a=>a.rating===i).length);
     const n=rs.length, c=counts[g.answer]||0;
